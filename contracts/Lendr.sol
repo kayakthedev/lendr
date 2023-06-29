@@ -4,8 +4,9 @@ pragma solidity ^0.8.9;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract Lendr is IERC721Receiver {
+contract Lendr is IERC721Receiver, ReentrancyGuard {
     enum LendOfferStatus {
         OPEN,
         ACCEPTED,
@@ -46,7 +47,7 @@ contract Lendr is IERC721Receiver {
 
     function createOffer(
         CreateLendOfferRequest calldata offerRequest
-    ) external {
+    ) external nonReentrant {
         require(offerRequest.numTokens > 0);
         require(offerRequest.lendDuration > 0);
         require(offerRequest.collateralId > 0);
@@ -74,7 +75,7 @@ contract Lendr is IERC721Receiver {
         );
     }
 
-    function acceptOffer(uint offerId) external {
+    function acceptOffer(uint offerId) external nonReentrant {
         LendOffer storage offer = lendOffers[offerId];
 
         require(
@@ -100,7 +101,7 @@ contract Lendr is IERC721Receiver {
         offer.offerAcceptedTs = block.timestamp;
     }
 
-    function repayLoan(uint offerId) external {
+    function repayLoan(uint offerId) external nonReentrant {
         LendOffer storage offer = lendOffers[offerId];
 
         require(
@@ -127,7 +128,7 @@ contract Lendr is IERC721Receiver {
         offer.status = LendOfferStatus.REPAID;
     }
 
-    function claimCollateral(uint offerId) external {
+    function claimCollateral(uint offerId) external nonReentrant {
         LendOffer storage offer = lendOffers[offerId];
 
         // Require that the duration has already passed.
@@ -151,7 +152,7 @@ contract Lendr is IERC721Receiver {
         offer.status = LendOfferStatus.COLLATERAL_CLAIMED;
     }
 
-    function cancelOffer(uint offerId) external {
+    function cancelOffer(uint offerId) external nonReentrant {
         LendOffer storage offer = lendOffers[offerId];
 
         require(
