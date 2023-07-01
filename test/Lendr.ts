@@ -308,7 +308,30 @@ describe("Lendr", function () {
       expect(await dummyERC721.ownerOf(1)).to.be.equal(loaner.address);
     });
 
-    it("should fail because lend period has not ended", async function () {
+    it("should revert because only creator can claim collateral", async function () {
+      const { lendr, loaner, loanee, dummyERC20, dummyERC721 } =
+        await loadFixture(deployContractsFixture);
+
+      await approveTokensAndCreateLoan(
+        lendr,
+        dummyERC20,
+        {
+          loanee: loanee.address,
+          collateralAddress: await dummyERC721.getAddress(),
+          collateralId: 1,
+          tokenAddress: await dummyERC20.getAddress(),
+          numTokens: 1000,
+          lendDuration: 1000,
+        },
+        loaner
+      );
+
+      expect(claimCollateral(lendr, 1, loanee)).to.be.revertedWith(
+        "Only owner can claim collateral"
+      );
+    });
+
+    it("should revert because lend period has not ended", async function () {
       const { lendr, loaner, loanee, dummyERC20, dummyERC721 } =
         await loadFixture(deployContractsFixture);
 
@@ -333,7 +356,7 @@ describe("Lendr", function () {
       );
     });
 
-    it("should fail because offer has not been accepted", async function () {
+    it("should revert because offer has not been accepted", async function () {
       const { lendr, loaner, loanee, dummyERC20, dummyERC721 } =
         await loadFixture(deployContractsFixture);
 
@@ -436,7 +459,7 @@ describe("Lendr", function () {
   });
 
   describe("Repay Loan", function () {
-    it("should cancel the loan successfully", async function () {
+    it("should repay the loan successfully", async function () {
       const { lendr, loaner, loanee, dummyERC20, dummyERC721 } =
         await loadFixture(deployContractsFixture);
 
