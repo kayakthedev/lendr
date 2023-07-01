@@ -6,3 +6,7 @@ This project was hacked together in less than 24 hours for learning purposes. If
 REPORT_GAS=true npx hardhat test
 npx hardhat run scripts/deploy.ts
 ```
+
+# Tests & Gas
+
+![Gas](ss/gas.png "Gas")
