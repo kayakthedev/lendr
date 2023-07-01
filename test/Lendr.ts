@@ -131,6 +131,16 @@ describe("Lendr", function () {
     return res.wait();
   }
 
+  async function repayLoan(
+    lendr: Lendr,
+    offerId: BigNumberish,
+    signer: HardhatEthersSigner
+  ) {
+    const res = await lendr.connect(signer).repayLoan(offerId);
+
+    return res.wait();
+  }
+
   async function claimCollateral(
     lendr: Lendr,
     offerId: BigNumberish,
@@ -422,6 +432,42 @@ describe("Lendr", function () {
       expect(cancelLoanOffer(lendr, 1, loanee)).to.be.revertedWith(
         "You can only cancel an open offer"
       );
+    });
+  });
+
+  describe("Repay Loan", function () {
+    it("should cancel the loan successfully", async function () {
+      const { lendr, loaner, loanee, dummyERC20, dummyERC721 } =
+        await loadFixture(deployContractsFixture);
+
+      const initialLoanerBalance = await dummyERC20.balanceOf(loaner.address);
+
+      await approveTokensAndCreateLoan(
+        lendr,
+        dummyERC20,
+        {
+          loanee: loanee.address,
+          collateralAddress: await dummyERC721.getAddress(),
+          collateralId: 1,
+          tokenAddress: await dummyERC20.getAddress(),
+          numTokens: 1000,
+          lendDuration: 1000,
+        },
+        loaner
+      );
+
+      await approveNFTsAndAcceptLoan(lendr, dummyERC721, 1, loanee);
+
+      await approveERC20Tokens(dummyERC20, await lendr.getAddress(), loanee);
+
+      await repayLoan(lendr, 1, loanee);
+
+      expect(await dummyERC20.balanceOf(loanee.address)).to.be.equal(BigInt(0));
+      expect(await dummyERC20.balanceOf(loaner.address)).to.be.equal(
+        initialLoanerBalance
+      );
+
+      expect(await dummyERC721.ownerOf(1)).to.be.equal(loanee.address);
     });
   });
 });
